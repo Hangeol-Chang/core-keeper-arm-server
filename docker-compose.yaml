@@ -1,17 +1,14 @@
 services:
   core-keeper:
-    image: ck-server-fex
+    image: ghcr.io/hangeol-chang/ck-server-arm:latest
     network_mode: "host"
     privileged: true
     dns:
       - 8.8.8.8
       - 8.8.4.4
     container_name: ck-server
-    # network_mode: host 사용 시 ports 매핑은 무시되므로 제거
-    # 포트는 host 네트워크를 통해 27015/udp 가 그대로 노출됨
     restart: always
     volumes:
       - ./data:/home/steam/core-keeper-data
     env_file:
       - path: core.env
-

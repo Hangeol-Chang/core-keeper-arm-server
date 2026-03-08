@@ -6,6 +6,7 @@ RUN apt update && apt install -y \
     curl python3 sudo expect-dev software-properties-common \
     xvfb libxi6 tini tzdata gosu jo jq gettext-base unzip wget \
     libdbus-1-3 libxcursor1 libxinerama1 libxss1 libgl1-mesa-dri mesa-utils \
+    squashfs-tools \
     && add-apt-repository -y ppa:fex-emu/fex && apt update && apt install -y fex-emu-armv8.2
 
 # 시스템 설정 및 유저 생성
@@ -13,23 +14,20 @@ RUN ln -sf /bin/true /usr/bin/systemctl && mkdir -p /tmp/.X11-unix && chmod 1777
 RUN useradd -m -u 1000 steam
 WORKDIR /home/steam
 
-# FEX RootFS 설치 (GUI 에러 방지 및 경로 고정)
+# FEX RootFS 설치 (FEXRootFSFetcher는 Docker 빌드 환경에서 zenity/TTY 없이 동작 불가)
+# curl로 Ubuntu 22.04 SquashFS 직접 다운로드 후 unsquashfs로 추출
 USER steam
 ENV HOME=/home/steam
-RUN mkdir -p /home/steam/.fex-emu/RootFS
-# -x 는 유효하지 않은 플래그 제거: FEXRootFSFetcher는 -y 만으로 자동 다운로드+추출
-RUN unbuffer FEXRootFSFetcher -y || true
-RUN cd /home/steam/.fex-emu/RootFS/ && \
-    # 순환 심볼릭 링크 방지: 실제 디렉토리가 무엇인지 확인 후 단방향으로만 링크 생성
-    if [ -d "Ubuntu_22.04" ] && [ ! -L "Ubuntu_22.04" ] && [ ! -e "Ubuntu_22_04" ]; then \
-        ln -s Ubuntu_22.04 Ubuntu_22_04; \
-    elif [ -d "Ubuntu_22_04" ] && [ ! -L "Ubuntu_22_04" ] && [ ! -e "Ubuntu_22.04" ]; then \
-        ln -s Ubuntu_22_04 Ubuntu_22.04; \
-    fi
+RUN mkdir -p /home/steam/.fex-emu/RootFS && \
+    curl -fSL "https://rootfs.fex-emu.gg/Ubuntu_22_04/2025-01-08/Ubuntu_22_04.sqsh" \
+         -o /home/steam/.fex-emu/RootFS/Ubuntu_22_04.sqsh && \
+    unsquashfs -d /home/steam/.fex-emu/RootFS/Ubuntu_22_04 \
+               /home/steam/.fex-emu/RootFS/Ubuntu_22_04.sqsh && \
+    rm /home/steam/.fex-emu/RootFS/Ubuntu_22_04.sqsh
 
-# FEX 설정 강제 주입
-RUN mkdir -p /home/steam/.fex-emu/ && \
-    echo '{"Config":{"RootFS":"/home/steam/.fex-emu/RootFS/Ubuntu_22_04"}}' > /home/steam/.fex-emu/Config.json
+# FEX 설정 강제 주입 (추출된 디렉토리 경로로 고정)
+RUN echo '{"Config":{"RootFS":"/home/steam/.fex-emu/RootFS/Ubuntu_22_04"}}' \
+    > /home/steam/.fex-emu/Config.json
 
 # DepotDownloader 설치 (ARM64 네이티브)
 USER root

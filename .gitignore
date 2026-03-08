@@ -1,3 +1,9 @@
 data/
-
 core.env
+
+# 백업 파일
+*.pugbackup
+*.bk
+
+# personal docs
+private_docs/
