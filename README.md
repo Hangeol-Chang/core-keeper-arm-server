@@ -1,152 +1,150 @@
 # Core Keeper Dedicated Server (ARM64)
 
-Oracle A1 등 **ARM64** 환경에서 [FEX-Emu](https://fex-emu.com/)를 통해 Core Keeper 전용 서버를 실행하는 Docker 이미지입니다.
+> **English** | [한국어](docs/README_kr.md)
 
-> **지원 환경:** ARM64 호스트 (Oracle Cloud A1, Ampere 등)
+A Docker image for running a Core Keeper dedicated server on **ARM64** hosts via [FEX-Emu](https://fex-emu.com/).
 
----
-
-## 사전 요구사항
-
-- Docker & Docker Compose 설치
-- ARM64 호스트 (Oracle A1 Flex 등)
-- mod.io API 키 (모드 사용 시)
+> **Supported:** ARM64 hosts (Oracle Cloud A1, Ampere, etc.)
 
 ---
 
-## 1. 실행법
+## Prerequisites
 
-### 1-1. 파일 준비
+- Docker & Docker Compose
+- ARM64 host (Oracle A1 Flex, etc.)
+- mod.io API key (if using mods)
+
+---
+
+## 1. Running the Server
+
+### 1-1. Clone the Repository
 
 ```bash
-git clone https://github.com/Hangeol-Chang/ck-server.git
-cd ck-server
+git clone https://github.com/Hangeol-Chang/core-keeper-arm-server.git
+cd core-keeper-arm-server
 ```
 
-### 1-2. 환경 변수 설정
+### 1-2. Configure Environment Variables
 
-`core.env.example`을 복사하여 `core.env` 파일을 만들고 값을 채웁니다.
+Copy the template and fill in your values:
 
 ```bash
 cp core.env.example core.env
 ```
 
-`core.env` 파일을 편집합니다:
+Edit `core.env`:
 
 ```dotenv
-WORLD_NAME="내 서버 이름"       # 서버/월드 이름
-MAX_PLAYERS=5                   # 최대 플레이어 수
-WORLD_INDEX=0                   # 월드 슬롯 번호 (0~2)
-SEASON=0                        # 시즌 설정
+WORLD_NAME="My Server"          # Server / world name
+MAX_PLAYERS=5                   # Maximum number of players
+WORLD_INDEX=0                   # World slot (0~2)
+SEASON=0                        # Season setting
 
-GAME_ID=my-unique-server-id     # 서버 고유 ID (Steam 로비 식별자)
-SERVER_PORT=27015               # 서버 포트 (UDP)
-PASSWORD=your_password          # 서버 접속 비밀번호 (없으면 빈칸)
-ALLOW_ONLY_PLATFORM=1           # 1: Steam 전용, 0: 크로스플랫폼
+GAME_ID=my-unique-server-id     # Unique server ID (Steam lobby identifier)
+SERVER_PORT=27015               # Server port (UDP)
+PASSWORD=your_password          # Server password (leave blank for none)
+ALLOW_ONLY_PLATFORM=1           # 1: Steam only, 0: cross-platform
 ```
 
-### 1-3. 데이터 폴더 생성
-
-월드 세이브 등 영구 데이터를 저장할 폴더를 만듭니다.
+### 1-3. Create the Data Directory
 
 ```bash
 mkdir -p data
 ```
 
-### 1-4. 이미지 Pull 및 서버 실행
+### 1-4. Pull Image and Start Server
 
 ```bash
-# 최신 이미지를 받아서 백그라운드로 실행
 docker compose up -d
 ```
 
-### 1-5. 로그 확인
+### 1-5. Check Logs
 
 ```bash
 docker logs -f ck-server
 ```
 
-아래 메시지가 뜨면 서버가 정상적으로 열린 것입니다:
+The server is ready when you see:
 
 ```
 Started session with info ...
 ```
 
-### 1-6. 서버 중지 / 재시작
+### 1-6. Stop / Restart
 
 ```bash
-docker compose down       # 중지
-docker compose restart    # 재시작
+docker compose down       # Stop
+docker compose restart    # Restart
 ```
 
-### 포트 방화벽 설정
+### Firewall / Port Configuration
 
-Oracle Cloud를 사용하는 경우, 인스턴스의 **Security List** 및 **OS 방화벽** 양쪽에서 포트를 열어야 합니다.
+If you are using Oracle Cloud, open port **27015/UDP** in both places:
 
 ```bash
-# UFW 방화벽 허용 (Ubuntu 기준)
+# Ubuntu UFW
 sudo ufw allow 27015/udp
 ```
 
-Oracle Cloud 콘솔에서도 VCN → Security List → Ingress Rules에서 **27015/UDP** 를 허용합니다.
+Also add an **Ingress Rule** for **27015/UDP** in the OCI Console under VCN → Security List.
 
 ---
 
-## 2. 모드 적용법
+## 2. Using Mods
 
-### 2-1. mod.io API 키 발급
+### 2-1. Get a mod.io API Key
 
-1. [mod.io](https://mod.io) 에 접속하여 계정을 만들거나 로그인합니다.
-2. 우측 상단 프로필 → **API Access** 페이지로 이동합니다.
-   - 직접 링크: `https://mod.io/me/access`
-3. **API Keys** 섹션에서 **+ New API Key** 를 클릭합니다.
-4. **Key Name**: 용도를 알 수 있는 이름 입력 (예: `ck-server`)
-5. **Purpose**: `Application` 선택
-6. **Agreement**: 동의 체크 후 **Submit**
-7. 생성된 API 키를 복사합니다.
+1. Sign in (or create an account) at [mod.io](https://mod.io).
+2. Go to your profile → **API Access**, or visit `https://mod.io/me/access` directly.
+3. Under **API Keys**, click **+ New API Key**.
+4. **Key Name**: anything descriptive (e.g., `ck-server`)
+5. **Purpose**: `Application`
+6. Accept the agreement and click **Submit**.
+7. Copy the generated API key.
 
-> mod.io의 Core Keeper 게임 페이지: https://mod.io/g/corekeeper
+> Core Keeper page on mod.io: https://mod.io/g/corekeeper
 
 ---
 
-### 2-2. core.env에 API 키 및 모드 설정
-
-`core.env` 파일에 아래 항목을 채웁니다:
+### 2-2. Set API Key and Mod List in core.env
 
 ```dotenv
 MODS_ENABLED=true
-MODIO_API_KEY=발급받은_API_키_입력
+MODIO_API_KEY=your_api_key_here
 MODIO_API_URL=https://u-38332206.modapi.io/v1
 
-# 설치할 모드 목록 (mod.io의 모드 Name ID를 쉼표로 구분)
+# Comma-separated list of mod Name IDs from mod.io
 MODS=allskills,double-chest-inventory,infinite-ore-boulders-dedicated-linux
 ```
 
-### 2-3. 모드 Name ID 찾는 법
+### 2-3. Finding a Mod's Name ID
 
-1. [mod.io Core Keeper 페이지](https://mod.io/g/corekeeper)에서 원하는 모드 검색
-2. 모드 상세 페이지 URL의 마지막 부분이 **Name ID** 입니다.
-   - 예: `https://mod.io/g/corekeeper/m/allskills` → Name ID: `allskills`
+The last segment of the mod's URL on mod.io is its **Name ID**:
 
-### 2-4. 특정 버전 고정 (선택)
+```
+https://mod.io/g/corekeeper/m/allskills  →  Name ID: allskills
+```
 
-모드를 최신 버전 대신 특정 버전으로 고정하려면 `모드ID:버전` 형식을 사용합니다:
+### 2-4. Pin a Specific Version (Optional)
+
+Use `nameID:version` syntax to lock a mod to a specific version:
 
 ```dotenv
 MODS=allskills:1.2.3,double-chest-inventory
 ```
 
-### 2-5. 모드 비활성화
+### 2-5. Disable Mods
 
-모드 없이 바닐라 서버로 실행하려면:
+To run a vanilla server without any mods:
 
 ```dotenv
 MODS_ENABLED=false
 ```
 
-### 2-6. 모드 업데이트 / 재설치
+### 2-6. Update / Reinstall Mods
 
-서버를 재시작하면 매번 모드를 재설치합니다.
+Mods are reinstalled on every server start. Simply restart to pick up updates:
 
 ```bash
 docker compose restart
@@ -154,41 +152,43 @@ docker compose restart
 
 ---
 
-## 디렉토리 구조
+## Directory Structure
 
 ```
-ck-server/
-├── Dockerfile              # 이미지 정의 (FEX-Emu + DepotDownloader)
-├── docker-compose.yaml     # 서버 실행 설정
-├── core.env                # 환경 변수 (직접 생성, Git 미포함)
-├── core.env.example        # 환경 변수 템플릿
+core-keeper-arm-server/
+├── Dockerfile              # Image definition (FEX-Emu + DepotDownloader)
+├── docker-compose.yaml     # Server runtime configuration
+├── core.env                # Your environment variables (not committed)
+├── core.env.example        # Environment variable template
 ├── scripts/
-│   └── init-server.sh      # 서버 초기화 및 실행 스크립트
-└── data/                   # 월드 세이브, 설정 등 영구 데이터 (Git 미포함)
+│   └── init-server.sh      # Server initialization & launch script
+├── docs/
+│   └── README_kr.md        # Korean documentation
+└── data/                   # World saves & persistent data (not committed)
 ```
 
 ---
 
-## 작동 방식
+## How It Works
 
-1. **FEX-Emu**: ARM64 호스트에서 x86-64 Core Keeper 서버 바이너리를 에뮬레이션
-2. **DepotDownloader**: Steam에서 게임 서버 파일을 자동 다운로드 (첫 실행 시)
-3. **mod.io API**: 지정한 모드를 서버 시작 시 자동 다운로드 및 설치
-4. **CPU 최적화**: 서버 세션 시작 전까지 코어 0에 고정, 세션 시작 후 전체 코어(0-3) 개방
+1. **FEX-Emu** — Emulates the x86-64 Core Keeper server binary on an ARM64 host.
+2. **DepotDownloader** — Downloads the game server files from Steam on first run.
+3. **mod.io API** — Downloads and installs specified mods on each server start.
+4. **CPU Pinning** — Server starts pinned to core 0; all cores (0–3) are unlocked after the session initialises.
 
 ---
 
-## 문제 해결
+## Troubleshooting
 
-**서버가 시작되지 않는 경우**
+**Server won't start**
 ```bash
 docker logs ck-server 2>&1 | tail -50
 ```
 
-**월드 데이터가 사라진 경우**
-- `data/` 폴더가 `docker-compose.yaml`의 볼륨에 올바르게 마운트되어 있는지 확인
+**World data missing**
+- Verify the `data/` directory is correctly mounted as a volume in `docker-compose.yaml`.
 
-**모드 설치 실패**
-- `MODIO_API_KEY`가 올바른지 확인
-- 모드 Name ID가 정확한지 mod.io에서 재확인
-- 서버 전용(Dedicated Server)을 지원하는 모드인지 확인
+**Mod installation fails**
+- Confirm `MODIO_API_KEY` is valid.
+- Double-check Name IDs on mod.io.
+- Ensure the mod supports dedicated servers.
